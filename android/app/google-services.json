@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "721097087792",
+    "project_id": "efc-worldwide",
+    "storage_bucket": "efc-worldwide.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:721097087792:android:fe633711f6a09eb8bd46f5",
+        "android_client_info": {
+          "package_name": "com.geoservetechnologies.efcworldwide"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCy1zjINkTerM221HWQ6BWqzfyMaTD9gV8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:721097087792:android:9422ff6f8e4916b6bd46f5",
+        "android_client_info": {
+          "package_name": "com.geoservetechnologies.efcworldwide.efc_wordlwide"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCy1zjINkTerM221HWQ6BWqzfyMaTD9gV8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
