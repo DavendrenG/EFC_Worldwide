@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.geoservetechnologies.efcworldwide.efcWordlwide</string>
+	<string>com.geoservetechnologies.efcworldwide</string>
 	<key>PROJECT_ID</key>
 	<string>efc-worldwide</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:721097087792:ios:7496f8975dbada42bd46f5</string>
+	<string>1:721097087792:ios:2a015ba1e837d2bbbd46f5</string>
 </dict>
 </plist>

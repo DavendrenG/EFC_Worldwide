@@ -1,4 +1,4 @@
-package com.geoservetechnologies.efcworldwide.efc_wordlwide
+package com.geoservetechnologies.efcworldwide
 
 import io.flutter.embedding.android.FlutterActivity
 
