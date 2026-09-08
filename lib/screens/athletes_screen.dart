@@ -101,7 +101,7 @@ class _AthletesScreenState extends State<AthletesScreen> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 0.86,
+                        childAspectRatio: 0.80,
                       ),
                       itemCount: list.length,
                       itemBuilder: (_, i) {

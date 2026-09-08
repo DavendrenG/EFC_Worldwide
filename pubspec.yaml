@@ -17,6 +17,7 @@ dependencies:
 
   # Networking + local storage
   http: ^1.2.1
+  xml: ^6.5.0
   shared_preferences: ^2.2.3
   cached_network_image: ^3.3.1
 
@@ -33,6 +34,7 @@ dependencies:
 
   # Push - Google Mobile Services (Android + iOS/APNs)
   firebase_core: ^2.31.0
+  cloud_firestore: ^4.17.5
   firebase_messaging: ^14.9.2
   flutter_local_notifications: ^17.1.2
 

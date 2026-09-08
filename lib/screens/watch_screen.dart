@@ -128,7 +128,7 @@ class _WatchScreenState extends State<WatchScreen> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        childAspectRatio: 0.92,
+                        childAspectRatio: 0.78,
                       ),
                       itemCount: list.length,
                       itemBuilder: (_, i) {

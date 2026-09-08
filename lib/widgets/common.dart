@@ -163,12 +163,14 @@ class ChipTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: 46,
+        // Tall enough that the label survives the largest text scale we
+        // allow. A 46px box clipped the chips on default Samsung settings.
+        height: 56,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(
             horizontal: EfcSpacing.screenH,
-            vertical: EfcSpacing.md,
+            vertical: EfcSpacing.sm,
           ),
           itemCount: items.length,
           separatorBuilder: (_, __) => const SizedBox(width: 6),
@@ -177,9 +179,10 @@ class ChipTabs extends StatelessWidget {
             return GestureDetector(
               onTap: () => onSelected(i),
               behavior: HitTestBehavior.opaque,
-              child: Container(
+              child: Center(
+                child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(
                   border:
                       Border.all(color: on ? EfcColors.blood : EfcColors.line),
@@ -193,6 +196,7 @@ class ChipTabs extends StatelessWidget {
                     letterSpacing: 1.0,
                   ),
                 ),
+              ),
               ),
             );
           },

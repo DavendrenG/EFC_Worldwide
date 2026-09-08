@@ -36,13 +36,16 @@ class EventPoster extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: EfcColors.posterGradient,
-        border: Border(bottom: BorderSide(color: EfcColors.line)),
+        border: Border(
+          bottom: BorderSide(color: EfcColors.line),
+          // Left accent as a border rather than a stretched child — an
+          // IntrinsicHeight Row here overflows as soon as the meta text wraps.
+          left: BorderSide(color: EfcColors.blood, width: 3),
+        ),
       ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 3, color: EfcColors.blood),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
@@ -110,7 +113,6 @@ class EventPoster extends StatelessWidget {
               ),
             ),
           ],
-        ),
       ),
     );
   }

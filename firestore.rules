@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The app reads content anonymously. Only EFC staff can write.
+    // Set the claim once per account with the Admin SDK:
+    //   await getAuth().setCustomUserClaims(uid, { efcStaff: true });
+    function isStaff() {
+      return request.auth != null && request.auth.token.efcStaff == true;
+    }
+
+    match /events/{id}   { allow read: if true; allow write: if isStaff(); }
+    match /fighters/{id} { allow read: if true; allow write: if isStaff(); }
+    match /videos/{id}   { allow read: if true; allow write: if isStaff(); }
+
+    match /articles/{id} {
+      allow read: if resource.data.published == true || isStaff();
+      allow write: if isStaff();
+    }
+
+    match /results/{id} { allow read: if true; allow write: if isStaff(); }
+
+    // Alerts are write-only triggers for the push relay. Nothing reads them
+    // from the app, so keep them closed to clients.
+    match /alerts/{id} { allow read: if isStaff(); allow write: if isStaff(); }
+
+    // Device tokens are written by the app, never read back by it.
+    match /devices/{token} {
+      allow read: if false;
+      allow write: if true;
+    }
+  }
+}

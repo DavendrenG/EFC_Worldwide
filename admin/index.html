@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EFC Publisher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Semi+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0A0B0D;--canvas:#15181C;--steel:#1F242A;--line:#2C333B;
+  --bone:#EDE7DA;--mute:#8A939D;--blood:#D8342A;--brass:#C89B3C;--free:#7FD3A0;
+  --display:'Anton',Impact,sans-serif;--body:'Barlow Semi Condensed',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--bone);font-family:var(--body);font-size:16px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit}
+
+/* ---------------- login ---------------- */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+#login .box{width:100%;max-width:380px;border:1px solid var(--line);background:var(--canvas);padding:34px 30px}
+#login .mark{font-family:var(--display);font-size:26px;letter-spacing:.05em;margin-bottom:4px}
+#login .mark span{color:var(--blood)}
+#login .cap{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--mute);text-transform:uppercase;margin-bottom:26px}
+
+/* ---------------- shell ---------------- */
+#app{display:none;min-height:100vh;grid-template-columns:230px 1fr}
+#app.on{display:grid}
+aside{border-right:1px solid var(--line);background:var(--canvas);padding:22px 0;display:flex;flex-direction:column}
+aside .mark{font-family:var(--display);font-size:19px;letter-spacing:.05em;padding:0 22px 20px}
+aside .mark span{color:var(--blood)}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;border-left:2px solid transparent;color:var(--mute);font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:13px 22px;cursor:pointer}
+nav button:hover{color:var(--bone)}
+nav button.on{color:var(--bone);border-left-color:var(--blood);background:rgba(216,52,42,.07)}
+aside .foot{margin-top:auto;padding:18px 22px 0;border-top:1px solid var(--line);font-family:var(--mono);font-size:10px;color:var(--mute);letter-spacing:.1em;line-height:1.9}
+aside .foot a{color:var(--blood);cursor:pointer;text-decoration:none}
+
+main{padding:30px 34px 70px;max-width:1100px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}
+h1{font-family:var(--display);font-size:31px;text-transform:uppercase;letter-spacing:.01em}
+.sub{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--blood);margin-bottom:7px}
+p.hint{color:var(--mute);font-size:15px;line-height:1.5;max-width:66ch}
+
+.view{display:none}
+.view.on{display:block}
+
+.cols{display:grid;grid-template-columns:1fr 320px;gap:30px;align-items:start}
+@media(max-width:900px){#app{grid-template-columns:1fr}aside{display:none}.cols{grid-template-columns:1fr}main{padding:22px}}
+
+label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--mute);margin:16px 0 6px}
+input,textarea,select{width:100%;background:var(--canvas);border:1px solid var(--line);color:var(--bone);font-size:16px;padding:10px 12px;border-radius:0}
+input:focus,textarea:focus,select:focus{outline:0;border-color:var(--blood)}
+textarea{min-height:120px;resize:vertical;line-height:1.5}
+select{font-family:var(--mono);font-size:13px}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+.check{display:flex;gap:10px;margin-top:16px;padding:13px;border:1px solid var(--line);background:var(--canvas)}
+.check input{width:auto;margin-top:3px}
+.check b{display:block;font-family:var(--display);font-size:14px;font-weight:400;text-transform:uppercase;letter-spacing:.02em}
+.check small{color:var(--mute);font-size:14px;line-height:1.4;display:block;margin-top:2px}
+
+.btn{background:var(--blood);border:1px solid var(--blood);color:#fff;font-family:var(--display);font-size:15px;letter-spacing:.07em;text-transform:uppercase;padding:13px 22px;cursor:pointer}
+.btn.wide{width:100%;margin-top:20px}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--bone)}
+.btn.sm{font-size:12px;padding:7px 12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.status{margin-top:14px;padding:11px 13px;border:1px solid var(--line);font-size:15px;display:none}
+.status.on{display:block}
+.status.ok{border-color:#3E7D58;color:var(--free)}
+.status.err{border-color:var(--blood);color:#FF9A93}
+.status.busy{border-color:var(--brass);color:var(--brass)}
+
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);font-weight:400}
+td.t{font-family:var(--mono);font-size:12px;color:var(--mute);white-space:nowrap}
+.tag{font-family:var(--mono);font-size:9px;padding:3px 6px;border:1px solid var(--brass);color:var(--brass);letter-spacing:.09em;white-space:nowrap}
+.tag.ok{border-color:#3E7D58;color:var(--free)}
+.tag.off{border-color:var(--line);color:var(--mute)}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+
+.side{border:1px solid var(--line);padding:19px;background:var(--canvas);position:sticky;top:24px}
+.side .cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;color:var(--mute);text-transform:uppercase}
+.side h3{font-family:var(--display);font-size:16px;text-transform:uppercase;font-weight:400;letter-spacing:.03em;margin-bottom:12px}
+.prev{border:1px solid var(--line);background:var(--ink);padding:13px;margin-top:12px}
+.prev .bar{font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:.12em;margin-bottom:8px}
+.notif{background:var(--steel);border-left:3px solid var(--blood);padding:10px 11px}
+.notif .app{font-family:var(--mono);font-size:9px;letter-spacing:.13em;color:var(--mute);text-transform:uppercase}
+.notif b{display:block;font-family:var(--display);font-size:14px;font-weight:400;text-transform:uppercase;margin-top:4px;line-height:1.15}
+.notif p{font-size:13.5px;color:#C6C0B4;margin-top:3px;line-height:1.35}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:26px}
+.stats div{background:var(--ink);padding:18px}
+.stats b{display:block;font-family:var(--display);font-size:30px;line-height:1}
+.stats span{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--mute)}
+
+pre{background:var(--canvas);border:1px solid var(--line);padding:14px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.6;margin:12px 0}
+code{font-family:var(--mono);font-size:13px;background:var(--canvas);padding:2px 5px;border:1px solid var(--line)}
+.warn{border:1px solid var(--brass);background:rgba(200,155,60,.06);padding:18px;margin-bottom:22px}
+.warn h3{font-family:var(--display);font-size:16px;text-transform:uppercase;font-weight:400;color:var(--brass);margin-bottom:6px}
+.warn p{font-size:15px;color:#C6C0B4;line-height:1.55}
+.empty{color:var(--mute);padding:26px 10px;font-size:15px}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <div class="box">
+    <div class="mark">EFC<span>/</span>PUBLISHER</div>
+    <div class="cap">Staff access only</div>
+    <label>Email</label>
+    <input type="email" id="l-email" autocomplete="username">
+    <label>Password</label>
+    <input type="password" id="l-pass" autocomplete="current-password">
+    <button class="btn wide" id="l-go">Sign in</button>
+    <div class="status" id="l-status"></div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <aside>
+    <div class="mark">EFC<span>/</span>PUBLISHER</div>
+    <nav id="nav">
+      <button class="on" data-v="dash">Dashboard</button>
+      <button data-v="news">News</button>
+      <button data-v="events">Events</button>
+      <button data-v="fighters">Fighters</button>
+      <button data-v="results">Results</button>
+      <button data-v="push">Push</button>
+      <button data-v="setup">Setup</button>
+    </nav>
+    <div class="foot">
+      <span id="who">—</span><br>
+      <a id="signout">Sign out</a>
+    </div>
+  </aside>
+
+  <main>
+
+  <!-- DASHBOARD -->
+  <section class="view on" id="v-dash">
+    <div class="head"><div>
+      <div class="sub">Overview</div><h1>Dashboard</h1>
+    </div></div>
+    <div class="stats">
+      <div><b id="s-articles">—</b><span>Articles</span></div>
+      <div><b id="s-events">—</b><span>Events</span></div>
+      <div><b id="s-fighters">—</b><span>Fighters</span></div>
+      <div><b id="s-pushes">—</b><span>Pushes sent</span></div>
+    </div>
+    <p class="hint">Everything published here reaches the app in about a second — no deploy, no app store update. Push notifications go to fans who opted into that topic.</p>
+    <h3 style="font-family:var(--display);font-size:17px;text-transform:uppercase;font-weight:400;margin:26px 0 6px">Recent activity</h3>
+    <table><thead><tr><th>When</th><th>Type</th><th>Title</th><th>Push</th></tr></thead>
+    <tbody id="dash-rows"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table>
+  </section>
+
+  <!-- NEWS -->
+  <section class="view" id="v-news">
+    <div class="head">
+      <div><div class="sub">Article</div><h1>Publish news</h1></div>
+      <button class="btn ghost sm" id="n-clear">New</button>
+    </div>
+    <p class="hint">Replaces the PDF workflow. Appears in the app immediately and lands on the lock screen of everyone subscribed to news.</p>
+    <div class="cols">
+      <div>
+        <input type="hidden" id="n-id">
+        <label>Headline</label>
+        <input id="n-title" maxlength="90" placeholder="Zondi steps in to face Jungula">
+        <div class="r2">
+          <div><label>Category</label><select id="n-cat">
+            <option>MATCHMAKING</option><option>EVENT</option><option>ANNOUNCEMENT</option>
+            <option>FEATURE</option><option>RESULTS</option></select></div>
+          <div><label>Linked event</label><select id="n-event"><option value="">None</option></select></div>
+        </div>
+        <label>Standfirst</label>
+        <input id="n-stand" maxlength="150" placeholder="One line under the headline">
+        <label>Body</label>
+        <textarea id="n-body" placeholder="The article as it should read in the app."></textarea>
+        <label>Hero image URL</label>
+        <input id="n-img" placeholder="https://…">
+        <label>Original release (optional PDF link)</label>
+        <input id="n-share" placeholder="https://www.efcworldwide.com/_files/…">
+        <div class="check"><input type="checkbox" id="n-push" checked>
+          <div><b>Send push notification</b><small>Goes to the news topic. Opens the article on tap.</small></div></div>
+        <button class="btn wide" id="n-go">Publish</button>
+        <div class="status" id="n-status"></div>
+      </div>
+      <aside class="side">
+        <div class="cap">Lock screen</div><h3>What fans see</h3>
+        <div class="prev"><div class="bar">NOW · EFC</div>
+          <div class="notif"><div class="app">EFC</div>
+            <b id="pv-t">Your headline</b><p id="pv-b">Your standfirst.</p></div></div>
+      </aside>
+    </div>
+    <h3 style="font-family:var(--display);font-size:17px;text-transform:uppercase;font-weight:400;margin:32px 0 6px">Published</h3>
+    <table><thead><tr><th>Date</th><th>Title</th><th>Category</th><th></th></tr></thead>
+    <tbody id="news-rows"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table>
+  </section>
+
+  <!-- EVENTS -->
+  <section class="view" id="v-events">
+    <div class="head">
+      <div><div class="sub">Schedule</div><h1>Events</h1></div>
+      <button class="btn ghost sm" id="e-clear">New</button>
+    </div>
+    <div class="cols">
+      <div>
+        <input type="hidden" id="e-id">
+        <div class="r2">
+          <div><label>Event name</label><input id="e-name" placeholder="EFC 140"></div>
+          <div><label>Headline bout</label><input id="e-head" placeholder="Zondi vs Jungula"></div>
+        </div>
+        <div class="r2">
+          <div><label>Main card</label><input type="datetime-local" id="e-start"></div>
+          <div><label>Prelims</label><input type="datetime-local" id="e-prelim"></div>
+        </div>
+        <div class="r2">
+          <div><label>Venue</label><input id="e-venue" value="WSB EFC Arena"></div>
+          <div><label>City</label><input id="e-city" value="Sandton"></div>
+        </div>
+        <div class="r2">
+          <div><label>Status</label><select id="e-status">
+            <option value="announced">Announced</option>
+            <option value="tickets_on_sale">Tickets on sale</option>
+            <option value="live">Live</option>
+            <option value="complete">Complete</option></select></div>
+          <div><label>Ticket URL</label><input id="e-tickets" placeholder="https://quicket.co.za/…"></div>
+        </div>
+        <label>Poster image URL</label>
+        <input id="e-poster" placeholder="https://…">
+        <div class="check"><input type="checkbox" id="e-push">
+          <div><b>Announce it</b><small>Pushes to card announcements. Leave off when editing.</small></div></div>
+        <button class="btn wide" id="e-go">Save event</button>
+        <div class="status" id="e-status"></div>
+      </div>
+      <aside class="side">
+        <div class="cap">Note</div><h3>Fight cards</h3>
+        <p style="font-size:14.5px;color:var(--mute);line-height:1.5">Bouts are added per event once the card firms up. For the demo the seeded cards carry EFC 137 and 139.</p>
+      </aside>
+    </div>
+    <table style="margin-top:30px"><thead><tr><th>Date</th><th>Event</th><th>Status</th><th></th></tr></thead>
+    <tbody id="event-rows"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table>
+  </section>
+
+  <!-- FIGHTERS -->
+  <section class="view" id="v-fighters">
+    <div class="head">
+      <div><div class="sub">Roster</div><h1>Fighters</h1></div>
+      <button class="btn ghost sm" id="f-clear">New</button>
+    </div>
+    <div>
+      <input type="hidden" id="f-id">
+      <div class="r3">
+        <div><label>First name</label><input id="f-first"></div>
+        <div><label>Last name</label><input id="f-last"></div>
+        <div><label>Nickname</label><input id="f-nick"></div>
+      </div>
+      <div class="r3">
+        <div><label>Division</label><select id="f-div"></select></div>
+        <div><label>Country</label><input id="f-country" value="South Africa"></div>
+        <div><label>Team</label><input id="f-team"></div>
+      </div>
+      <div class="r3">
+        <div><label>Wins</label><input type="number" id="f-w" value="0"></div>
+        <div><label>Losses</label><input type="number" id="f-l" value="0"></div>
+        <div><label>Draws</label><input type="number" id="f-d" value="0"></div>
+      </div>
+      <div class="r3">
+        <div><label>Height (cm)</label><input type="number" id="f-h"></div>
+        <div><label>Reach (cm)</label><input type="number" id="f-r"></div>
+        <div><label>Age</label><input type="number" id="f-age"></div>
+      </div>
+      <div class="r3">
+        <div><label>KO wins</label><input type="number" id="f-ko" value="0"></div>
+        <div><label>Submission wins</label><input type="number" id="f-sub" value="0"></div>
+        <div><label>Ranking</label><input type="number" id="f-rank" placeholder="1"></div>
+      </div>
+      <label>Portrait image URL</label>
+      <input id="f-img" placeholder="https://…">
+      <div class="check"><input type="checkbox" id="f-champ">
+        <div><b>Current champion</b><small>Shows the champion badge and pins them to the Champions tab.</small></div></div>
+      <button class="btn wide" id="f-go">Save fighter</button>
+      <div class="status" id="f-status"></div>
+    </div>
+    <table style="margin-top:30px"><thead><tr><th>Name</th><th>Division</th><th>Record</th><th></th></tr></thead>
+    <tbody id="fighter-rows"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="view" id="v-results">
+    <div class="head"><div><div class="sub">Fight night</div><h1>Post a result</h1></div></div>
+    <p class="hint">Built for live use between bouts. Lands on the event card and pushes to everyone following live results.</p>
+    <div class="cols">
+      <div>
+        <label>Event</label><select id="r-event"></select>
+        <div class="r2">
+          <div><label>Winner</label><input id="r-win" placeholder="Zondi"></div>
+          <div><label>Opponent</label><input id="r-lose" placeholder="Jungula"></div>
+        </div>
+        <div class="r2">
+          <div><label>Method</label><select id="r-method">
+            <option>KO</option><option>TKO</option><option>Submission</option>
+            <option>Unanimous decision</option><option>Split decision</option>
+            <option>Majority decision</option><option>No contest</option></select></div>
+          <div><label>Round and time</label><input id="r-round" placeholder="R2, 3:41"></div>
+        </div>
+        <div class="check"><input type="checkbox" id="r-push" checked>
+          <div><b>Push the result</b><small>Only to fans who opted into live results.</small></div></div>
+        <button class="btn wide" id="r-go">Post result</button>
+        <div class="status" id="r-status"></div>
+      </div>
+      <aside class="side">
+        <div class="cap">Lock screen</div><h3>What fans see</h3>
+        <div class="prev"><div class="bar">NOW · EFC</div>
+          <div class="notif"><div class="app">EFC · RESULT</div>
+            <b id="pv-rt">EFC 137</b><p id="pv-rb">Winner def. opponent</p></div></div>
+      </aside>
+    </div>
+    <table style="margin-top:30px"><thead><tr><th>When</th><th>Result</th><th>Method</th><th></th></tr></thead>
+    <tbody id="result-rows"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table>
+  </section>
+
+  <!-- PUSH -->
+  <section class="view" id="v-push">
+    <div class="head"><div><div class="sub">Direct</div><h1>Send a notification</h1></div></div>
+    <p class="hint">A standalone alert with no article behind it. Ticket drops, schedule changes, fight-week reminders. There is no undo.</p>
+    <div class="cols">
+      <div>
+        <label>Audience</label>
+        <select id="a-topic">
+          <option value="efc_all_events">Everyone</option>
+          <option value="efc_card_announcements">Card announcements</option>
+          <option value="efc_live_results">Live results</option>
+          <option value="efc_news">News and features</option>
+        </select>
+        <label>Title</label><input id="a-title" maxlength="65" placeholder="EFC 137 tickets are live">
+        <label>Message</label><input id="a-body" maxlength="150" placeholder="Main card 19h00, WSB EFC Arena.">
+        <label>Opens in app</label>
+        <select id="a-link">
+          <option value="/">Home</option><option value="/events">Events</option>
+          <option value="/watch">Fight library</option><option value="/news">News</option>
+        </select>
+        <button class="btn wide" id="a-go">Send now</button>
+        <div class="status" id="a-status"></div>
+      </div>
+      <aside class="side">
+        <div class="cap">Lock screen</div><h3>What fans see</h3>
+        <div class="prev"><div class="bar">NOW · EFC</div>
+          <div class="notif"><div class="app">EFC</div>
+            <b id="pv-at">Your title</b><p id="pv-ab">Your message.</p></div></div>
+        <p style="font-size:14px;color:var(--mute);margin-top:13px;line-height:1.45">Two per day keeps opt-outs low. More than that and fans start turning notifications off.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section class="view" id="v-setup">
+    <div class="head"><div><div class="sub">One-time</div><h1>Setup</h1></div></div>
+
+    <div class="warn"><h3>Seed the database</h3>
+      <p>Loads the real EFC events, fighters and news into Firestore so the app has content from the first launch. Safe to run more than once — it writes to fixed document ids rather than creating duplicates.</p>
+      <button class="btn sm" id="seed-go" style="margin-top:12px">Seed Firestore</button>
+      <div class="status" id="seed-status"></div>
+    </div>
+
+    <p class="hint">Firebase config goes in <code>firebaseConfig</code> at the bottom of this file. Project settings → General → Your apps → Web app.</p>
+
+    <h3 style="font-family:var(--display);font-size:17px;text-transform:uppercase;font-weight:400;margin:26px 0 4px">Staff accounts</h3>
+    <p class="hint">Create each EFC user under Authentication → Users, then mark them staff by running this once per account with the Admin SDK. The security rules below check that claim.</p>
+    <pre>const { getAuth } = require('firebase-admin/auth');
+await getAuth().setCustomUserClaims(uid, { efcStaff: true });</pre>
+
+    <h3 style="font-family:var(--display);font-size:17px;text-transform:uppercase;font-weight:400;margin:26px 0 4px">Firestore rules</h3>
+    <p class="hint">Deploy with <code>firebase deploy --only firestore:rules</code>. Without these anyone can write to your collections.</p>
+    <pre>rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /{col}/{id} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.efcStaff == true;
+    }
+  }
+}</pre>
+
+    <h3 style="font-family:var(--display);font-size:17px;text-transform:uppercase;font-weight:400;margin:26px 0 4px">Push relay</h3>
+    <p class="hint">Browsers cannot send FCM directly — the server key would be readable in view-source. Deploy the functions in <code>functions/index.js</code>. Requires the Blaze plan.</p>
+    <pre>cd functions && npm install
+firebase deploy --only functions</pre>
+  </section>
+
+  </main>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {
+  getFirestore, collection, doc, setDoc, addDoc, deleteDoc, getDocs,
+  onSnapshot, query, orderBy, limit, serverTimestamp, Timestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+// ══════════════════════════════════════════════════════════════════
+// PASTE YOUR FIREBASE WEB CONFIG HERE
+// Firebase Console → Project settings → General → Your apps → Web
+// ══════════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "REPLACE_ME",
+  authDomain: "efc-worldwide.firebaseapp.com",
+  projectId: "efc-worldwide",
+  storageBucket: "efc-worldwide.appspot.com",
+  messagingSenderId: "721097087792",
+  appId: "REPLACE_ME"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function status(id, msg, kind) {
+  const n = $(id);
+  n.className = 'status on ' + kind;
+  n.textContent = msg;
+  if (kind === 'ok') setTimeout(() => n.className = 'status', 4000);
+}
+
+const DIVISIONS = ['Heavyweight','Light Heavyweight','Middleweight','Welterweight',
+  'Lightweight','Featherweight','Bantamweight','Flyweight',
+  "Women's Flyweight","Women's Strawweight"];
+
+// ─────────────────────────────── auth
+$('l-go').addEventListener('click', async () => {
+  status('l-status', 'Signing in…', 'busy');
+  try {
+    await signInWithEmailAndPassword(auth, $('l-email').value.trim(), $('l-pass').value);
+  } catch (e) {
+    status('l-status', e.code === 'auth/invalid-credential'
+      ? 'Wrong email or password.' : e.message, 'err');
+  }
+});
+$('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('l-go').click(); });
+$('signout').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    $('login').style.display = 'none';
+    $('app').classList.add('on');
+    $('who').textContent = user.email;
+    start();
+  } else {
+    $('login').style.display = 'flex';
+    $('app').classList.remove('on');
+  }
+});
+
+// ─────────────────────────────── nav
+$('nav').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#nav button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  $('v-' + b.dataset.v).classList.add('on');
+});
+
+// ─────────────────────────────── previews
+const bind = (src, dst, fb) => $(src).addEventListener('input',
+  () => $(dst).textContent = $(src).value || fb);
+bind('n-title','pv-t','Your headline');
+bind('n-stand','pv-b','Your standfirst.');
+bind('a-title','pv-at','Your title');
+bind('a-body','pv-ab','Your message.');
+
+const rPrev = () => {
+  const w = $('r-win').value || 'Winner', l = $('r-lose').value || 'Opponent';
+  const m = $('r-method').value, r = $('r-round').value;
+  $('pv-rt').textContent = $('r-event').selectedOptions[0]?.text.split(' — ')[0] || 'EFC';
+  $('pv-rb').textContent = `${w} def. ${l} — ${m}${r ? ', ' + r : ''}`;
+};
+['r-win','r-lose','r-method','r-round','r-event']
+  .forEach(id => $(id).addEventListener('input', rPrev));
+
+// ─────────────────────────────── live data
+let events = [], pushCount = 0;
+
+function start() {
+  DIVISIONS.forEach(d => $('f-div').add(new Option(d, d)));
+
+  // Articles
+  onSnapshot(query(collection(db,'articles'), orderBy('published_at','desc'), limit(50)),
+    snap => {
+      const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      $('s-articles').textContent = rows.length;
+      $('news-rows').innerHTML = rows.length ? rows.map(a => `
+        <tr><td class="t">${fmt(a.published_at)}</td>
+        <td>${esc(a.title)}</td>
+        <td><span class="tag off">${esc(a.category||'')}</span></td>
+        <td><div class="acts">
+          <button class="btn ghost sm" data-edit-news="${a.id}">Edit</button>
+          <button class="btn ghost sm" data-del="articles/${a.id}">Delete</button>
+        </div></td></tr>`).join('')
+        : '<tr><td colspan="4" class="empty">Nothing published yet.</td></tr>';
+      dash(rows);
+    });
+
+  // Events
+  onSnapshot(query(collection(db,'events'), orderBy('starts_at')), snap => {
+    events = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    $('s-events').textContent = events.length;
+    $('event-rows').innerHTML = events.length ? events.map(e => `
+      <tr><td class="t">${fmt(e.starts_at)}</td>
+      <td>${esc(e.name)} — ${esc(e.headline||'')}</td>
+      <td><span class="tag ${e.status==='tickets_on_sale'?'ok':'off'}">${esc((e.status||'').replace(/_/g,' '))}</span></td>
+      <td><div class="acts">
+        <button class="btn ghost sm" data-edit-event="${e.id}">Edit</button>
+        <button class="btn ghost sm" data-del="events/${e.id}">Delete</button>
+      </div></td></tr>`).join('')
+      : '<tr><td colspan="4" class="empty">No events yet.</td></tr>';
+
+    for (const sel of ['n-event','r-event']) {
+      const el = $(sel), keep = el.value;
+      el.innerHTML = sel === 'n-event' ? '<option value="">None</option>' : '';
+      events.forEach(e => el.add(new Option(`${e.name} — ${fmt(e.starts_at)}`, e.id)));
+      el.value = keep;
+    }
+    rPrev();
+  });
+
+  // Fighters
+  onSnapshot(collection(db,'fighters'), snap => {
+    const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a,b) => (a.last_name||'').localeCompare(b.last_name||''));
+    $('s-fighters').textContent = rows.length;
+    $('fighter-rows').innerHTML = rows.length ? rows.map(f => `
+      <tr><td>${esc(f.first_name)} ${esc(f.last_name)}
+        ${f.is_champion ? '<span class="tag">Champ</span>' : ''}</td>
+      <td class="t">${esc(f.division||'')}</td>
+      <td class="t">${f.wins||0}-${f.losses||0}-${f.draws||0}</td>
+      <td><div class="acts">
+        <button class="btn ghost sm" data-edit-fighter="${f.id}">Edit</button>
+        <button class="btn ghost sm" data-del="fighters/${f.id}">Delete</button>
+      </div></td></tr>`).join('')
+      : '<tr><td colspan="4" class="empty">No fighters yet. Seed from the Setup tab.</td></tr>';
+    window.__fighters = rows;
+  });
+
+  // Results
+  onSnapshot(query(collection(db,'results'), orderBy('createdAt','desc'), limit(30)), snap => {
+    const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    $('result-rows').innerHTML = rows.length ? rows.map(r => `
+      <tr><td class="t">${r.createdAt?.toDate?.().toLocaleString('en-ZA') || '—'}</td>
+      <td>${esc(r.title)}</td><td class="t">${esc(r.method||'')} ${esc(r.round||'')}</td>
+      <td><div class="acts"><button class="btn ghost sm" data-del="results/${r.id}">Delete</button></div></td></tr>`).join('')
+      : '<tr><td colspan="4" class="empty">No results posted.</td></tr>';
+  });
+
+  // Push log
+  onSnapshot(query(collection(db,'alerts'), orderBy('createdAt','desc'), limit(50)),
+    snap => { pushCount = snap.size; $('s-pushes').textContent = pushCount; });
+}
+
+const fmt = v => {
+  const d = v?.toDate?.() ?? (v ? new Date(v) : null);
+  return d ? d.toLocaleDateString('en-ZA', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+};
+
+function dash(articles) {
+  $('dash-rows').innerHTML = articles.slice(0,10).map(a => `
+    <tr><td class="t">${fmt(a.published_at)}</td><td class="t">Article</td>
+    <td>${esc(a.title)}</td>
+    <td>${a.push ? '<span class="tag ok">Sent</span>' : '<span class="tag off">Silent</span>'}</td></tr>`
+  ).join('') || '<tr><td colspan="4" class="empty">Nothing yet.</td></tr>';
+}
+
+// ─────────────────────────────── row actions
+document.addEventListener('click', async e => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    const [col, id] = del.dataset.del.split('/');
+    if (!confirm('Delete this permanently?')) return;
+    await deleteDoc(doc(db, col, id));
+    return;
+  }
+  const en = e.target.closest('[data-edit-news]');
+  if (en) {
+    const snap = await getDocs(query(collection(db,'articles')));
+    const a = snap.docs.find(d => d.id === en.dataset.editNews)?.data();
+    if (!a) return;
+    $('n-id').value = en.dataset.editNews;
+    $('n-title').value = a.title || ''; $('n-cat').value = a.category || 'MATCHMAKING';
+    $('n-event').value = a.event_id || ''; $('n-stand').value = a.standfirst || '';
+    $('n-body').value = a.body || ''; $('n-img').value = a.hero_image_url || '';
+    $('n-share').value = a.share_url || ''; $('n-push').checked = false;
+    $('pv-t').textContent = a.title || 'Your headline';
+    $('pv-b').textContent = a.standfirst || 'Your standfirst.';
+    document.querySelector('[data-v="news"]').click();
+    window.scrollTo(0,0);
+  }
+  const ev = e.target.closest('[data-edit-event]');
+  if (ev) {
+    const x = events.find(v => v.id === ev.dataset.editEvent); if (!x) return;
+    $('e-id').value = x.id; $('e-name').value = x.name || '';
+    $('e-head').value = x.headline || ''; $('e-venue').value = x.venue || '';
+    $('e-city').value = x.city || ''; $('e-status').value = x.status || 'announced';
+    $('e-tickets').value = x.ticket_url || ''; $('e-poster').value = x.poster_url || '';
+    $('e-start').value = local(x.starts_at); $('e-prelim').value = local(x.prelims_at);
+    $('e-push').checked = false;
+    document.querySelector('[data-v="events"]').click(); window.scrollTo(0,0);
+  }
+  const fi = e.target.closest('[data-edit-fighter]');
+  if (fi) {
+    const f = (window.__fighters||[]).find(v => v.id === fi.dataset.editFighter); if (!f) return;
+    $('f-id').value = f.id; $('f-first').value = f.first_name || '';
+    $('f-last').value = f.last_name || ''; $('f-nick').value = f.nickname || '';
+    $('f-div').value = f.division || DIVISIONS[0]; $('f-country').value = f.country || '';
+    $('f-team').value = f.team || ''; $('f-w').value = f.wins || 0;
+    $('f-l').value = f.losses || 0; $('f-d').value = f.draws || 0;
+    $('f-h').value = f.height_cm || ''; $('f-r').value = f.reach_cm || '';
+    $('f-age').value = f.age || ''; $('f-ko').value = f.ko_wins || 0;
+    $('f-sub').value = f.submission_wins || 0; $('f-rank').value = f.ranking || '';
+    $('f-img').value = f.portrait_url || ''; $('f-champ').checked = !!f.is_champion;
+    document.querySelector('[data-v="fighters"]').click(); window.scrollTo(0,0);
+  }
+});
+
+const local = v => {
+  const d = v?.toDate?.() ?? (v ? new Date(v) : null);
+  if (!d) return '';
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+// ─────────────────────────────── publish news
+$('n-clear').addEventListener('click', () => {
+  ['n-id','n-title','n-stand','n-body','n-img','n-share'].forEach(i => $(i).value = '');
+  $('n-push').checked = true;
+});
+
+$('n-go').addEventListener('click', async () => {
+  const title = $('n-title').value.trim();
+  if (!title) return status('n-status','A headline is required.','err');
+  status('n-status','Publishing…','busy');
+  try {
+    const id = $('n-id').value || slug(title);
+    const push = $('n-push').checked;
+    await setDoc(doc(db,'articles',id), {
+      title,
+      category: $('n-cat').value,
+      event_id: $('n-event').value || null,
+      standfirst: $('n-stand').value.trim(),
+      body: $('n-body').value.trim(),
+      hero_image_url: $('n-img').value.trim() || null,
+      share_url: $('n-share').value.trim() || null,
+      published: true,
+      published_at: $('n-id').value ? (Timestamp.now()) : Timestamp.now(),
+      push,
+      topic: 'efc_news',
+      deep_link: '/news/' + id,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    status('n-status', push
+      ? 'Published. Notification on its way.'
+      : 'Published. No notification sent.', 'ok');
+    $('n-clear').click();
+    $('pv-t').textContent = 'Your headline';
+    $('pv-b').textContent = 'Your standfirst.';
+  } catch (e) { status('n-status','Failed: ' + e.message,'err'); }
+});
+
+// ─────────────────────────────── events
+$('e-clear').addEventListener('click', () =>
+  ['e-id','e-name','e-head','e-tickets','e-poster','e-start','e-prelim'].forEach(i => $(i).value=''));
+
+$('e-go').addEventListener('click', async () => {
+  const name = $('e-name').value.trim();
+  if (!name) return status('e-status','Event name is required.','err');
+  status('e-status','Saving…','busy');
+  try {
+    const id = $('e-id').value || slug(name);
+    await setDoc(doc(db,'events',id), {
+      name,
+      headline: $('e-head').value.trim(),
+      starts_at: $('e-start').value ? Timestamp.fromDate(new Date($('e-start').value)) : null,
+      prelims_at: $('e-prelim').value ? Timestamp.fromDate(new Date($('e-prelim').value)) : null,
+      venue: $('e-venue').value.trim(),
+      city: $('e-city').value.trim(),
+      status: $('e-status').value,
+      ticket_url: $('e-tickets').value.trim() || null,
+      poster_url: $('e-poster').value.trim() || null,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+
+    if ($('e-push').checked) {
+      await addDoc(collection(db,'alerts'), {
+        title: name + ' announced',
+        body: $('e-head').value.trim() || 'Full card coming soon.',
+        topic: 'efc_card_announcements',
+        deep_link: '/events/' + id,
+        createdAt: serverTimestamp(),
+      });
+    }
+    status('e-status','Saved.','ok');
+    $('e-clear').click();
+  } catch (e) { status('e-status','Failed: ' + e.message,'err'); }
+});
+
+// ─────────────────────────────── fighters
+$('f-clear').addEventListener('click', () =>
+  ['f-id','f-first','f-last','f-nick','f-team','f-h','f-r','f-age','f-rank','f-img']
+    .forEach(i => $(i).value=''));
+
+$('f-go').addEventListener('click', async () => {
+  const first = $('f-first').value.trim(), last = $('f-last').value.trim();
+  if (!first || !last) return status('f-status','First and last name are required.','err');
+  status('f-status','Saving…','busy');
+  try {
+    const id = $('f-id').value || 'f-' + slug(last);
+    const num = v => v === '' ? null : Number(v);
+    await setDoc(doc(db,'fighters',id), {
+      first_name: first, last_name: last,
+      nickname: $('f-nick').value.trim() || null,
+      division: $('f-div').value,
+      country: $('f-country').value.trim() || null,
+      team: $('f-team').value.trim() || null,
+      wins: Number($('f-w').value)||0, losses: Number($('f-l').value)||0,
+      draws: Number($('f-d').value)||0,
+      height_cm: num($('f-h').value), reach_cm: num($('f-r').value),
+      age: num($('f-age').value), ranking: num($('f-rank').value),
+      ko_wins: Number($('f-ko').value)||0,
+      submission_wins: Number($('f-sub').value)||0,
+      portrait_url: $('f-img').value.trim() || null,
+      is_champion: $('f-champ').checked,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    status('f-status','Saved.','ok');
+    $('f-clear').click();
+  } catch (e) { status('f-status','Failed: ' + e.message,'err'); }
+});
+
+// ─────────────────────────────── results
+$('r-go').addEventListener('click', async () => {
+  const w = $('r-win').value.trim(), l = $('r-lose').value.trim();
+  if (!w || !l) return status('r-status','Both names are required.','err');
+  const m = $('r-method').value, rd = $('r-round').value.trim();
+  const ev = $('r-event').value;
+  status('r-status','Posting…','busy');
+  try {
+    await addDoc(collection(db,'results'), {
+      event_id: ev, title: `${w} def. ${l}`, method: m, round: rd,
+      body: `${w} def. ${l} — ${m}${rd ? ', ' + rd : ''}`,
+      push: $('r-push').checked, topic: 'efc_live_results',
+      deep_link: '/events/' + ev, createdAt: serverTimestamp(),
+    });
+    status('r-status','Result live.','ok');
+    ['r-win','r-lose','r-round'].forEach(i => $(i).value=''); rPrev();
+  } catch (e) { status('r-status','Failed: ' + e.message,'err'); }
+});
+
+// ─────────────────────────────── direct push
+$('a-go').addEventListener('click', async () => {
+  const t = $('a-title').value.trim(), b = $('a-body').value.trim();
+  if (!t || !b) return status('a-status','Title and message are required.','err');
+  if (!confirm(`Send to ${$('a-topic').selectedOptions[0].text}? This cannot be undone.`)) return;
+  status('a-status','Sending…','busy');
+  try {
+    await addDoc(collection(db,'alerts'), {
+      title: t, body: b, topic: $('a-topic').value,
+      deep_link: $('a-link').value, createdAt: serverTimestamp(),
+    });
+    status('a-status','Sent.','ok');
+    $('a-title').value=''; $('a-body').value='';
+  } catch (e) { status('a-status','Failed: ' + e.message,'err'); }
+});
+
+// ─────────────────────────────── seeding
+$('seed-go').addEventListener('click', async () => {
+  if (!confirm('Load the EFC seed data into Firestore?')) return;
+  status('seed-status','Seeding…','busy');
+  try {
+    const res = await fetch('./seed.json');
+    const seed = await res.json();
+    let n = 0;
+    for (const [col, docs] of Object.entries(seed)) {
+      for (const d of docs) {
+        const { id, ...rest } = d;
+        if (rest.starts_at)  rest.starts_at  = Timestamp.fromDate(new Date(rest.starts_at));
+        if (rest.prelims_at) rest.prelims_at = Timestamp.fromDate(new Date(rest.prelims_at));
+        if (rest.published_at) rest.published_at = Timestamp.fromDate(new Date(rest.published_at));
+        await setDoc(doc(db, col, id), rest, { merge: true });
+        n++;
+      }
+    }
+    status('seed-status', `Seeded ${n} documents.`, 'ok');
+  } catch (e) {
+    status('seed-status','Failed: ' + e.message + ' — is seed.json next to this file?','err');
+  }
+});
+
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60);
+</script>
+</body>
+</html>
