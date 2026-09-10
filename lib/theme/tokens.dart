@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 class EfcColors {
   EfcColors._();
 
-  static const ink = Color(0xFF0A0B0D);
-  static const canvas = Color(0xFF15181C);
-  static const steel = Color(0xFF1F242A);
-  static const line = Color(0xFF2C333B);
-  static const bone = Color(0xFFEDE7DA);
-  static const boneDim = Color(0xFFC6C0B4);
-  static const mute = Color(0xFF8A939D);
+  static const ink = Color(0xFF08090B);
+  static const canvas = Color(0xFF101317);
+  static const steel = Color(0xFF191D22);
+  static const line = Color(0xFF242A30);
+  static const bone = Color(0xFFF2EDE3);
+  static const boneDim = Color(0xFFB9B3A8);
+  static const mute = Color(0xFF7E878F);
   static const blood = Color(0xFFD8342A);
   static const brass = Color(0xFFC89B3C);
   static const cornerRed = Color(0xFFC4342B);
@@ -25,6 +25,27 @@ class EfcColors {
     end: Alignment.bottomRight,
     colors: [Color(0xFF1D2228), Color(0xFF101317)],
     stops: [0.0, 0.65],
+  );
+
+  /// Scrim laid over a full-bleed hero so overlaid text stays readable
+  /// regardless of what the photograph underneath looks like.
+  static const heroScrim = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0x2608090B),
+      Color(0x1A08090B),
+      Color(0xEB08090B),
+    ],
+    stops: [0.0, 0.35, 0.88],
+  );
+
+  /// Lighter scrim for cards where the title sits lower in the frame.
+  static const cardScrim = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0x0008090B), Color(0xE608090B)],
+    stops: [0.30, 0.92],
   );
 
   /// Placeholder gradient behind artwork that has not loaded yet.

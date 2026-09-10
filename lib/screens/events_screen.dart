@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
 import '../theme/tokens.dart';
-import '../widgets/cards.dart';
 import '../widgets/common.dart';
+import '../widgets/layout_b.dart';
 import 'event_detail_screen.dart';
 import 'screen_scaffold.dart';
 
@@ -54,12 +54,12 @@ class EventsScreen extends StatelessWidget {
                 if (state.upcomingEvents.isNotEmpty) ...[
                   const SectionHeader(title: 'Upcoming'),
                   for (final e in state.upcomingEvents)
-                    EventRow(event: e, onTap: () => open(e.id)),
+                    ScheduleRow(event: e, onTap: () => open(e.id)),
                 ],
                 if (state.pastEvents.isNotEmpty) ...[
                   const SectionHeader(title: 'Results'),
                   for (final e in state.pastEvents)
-                    EventRow(event: e, onTap: () => open(e.id)),
+                    ScheduleRow(event: e, onTap: () => open(e.id)),
                 ],
               ],
             ),

@@ -97,20 +97,25 @@ class _TabBar extends StatelessWidget {
                           children: [
                             Icon(
                               _items[i].$1,
-                              size: 19,
+                              size: 20,
+                              // Red marks the active tab, as on the top
+                              // accent bar — no second visual language.
                               color: i == index
-                                  ? Colors.white
+                                  ? EfcColors.blood
                                   : EfcColors.mute,
                             ),
                             const SizedBox(height: 3),
                             Text(
                               _items[i].$2.toUpperCase(),
-                              style: EfcText.utility(
-                                size: 8.5,
+                              // Body face, not mono. Mono at 8.5pt across five
+                              // labels read as dense and clipped at larger
+                              // system text sizes.
+                              style: EfcText.body(
+                                size: 10,
+                                weight: FontWeight.w600,
                                 color: i == index
                                     ? Colors.white
                                     : EfcColors.mute,
-                                letterSpacing: 1.0,
                               ),
                             ),
                           ],

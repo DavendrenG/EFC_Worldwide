@@ -5,8 +5,8 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/tokens.dart';
-import '../widgets/cards.dart';
 import '../widgets/common.dart';
+import '../widgets/layout_b.dart';
 import 'screen_scaffold.dart';
 import 'video_player_screen.dart';
 
@@ -117,38 +117,52 @@ class _WatchScreenState extends State<WatchScreen> {
                       body: 'Try a different fighter, event or division.',
                     ),
                   )
-                else
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 0.78,
+                else ...[
+                  // One wide card anchors the screen, the rest are portrait
+                  // poster tiles — a fight poster is portrait, so is the tile.
+                  LeadCard(
+                    title: list.first.title,
+                    meta: list.first.durationSeconds > 0
+                        ? '${list.first.durationLabel} \u00b7 '
+                            '${list.first.tierLabel}'
+                        : list.first.tierLabel,
+                    imageUrl: list.first.thumbnailUrl,
+                    height: 172,
+                    showPlay: !list.first.isPremium,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => VideoPlayerScreen(video: list.first),
                       ),
-                      itemCount: list.length,
-                      itemBuilder: (_, i) {
-                        final v = list[i];
-                        return GridCard(
-                          title: v.title,
-                          subtitle: '${v.kind.label} \u00b7 ${v.tierLabel}',
-                          caption: v.durationLabel,
-                          trailing: v.isPremium
-                              ? const Pill('Premium')
-                              : const Pill('Free', variant: PillVariant.free),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => VideoPlayerScreen(video: v),
-                            ),
-                          ),
-                        );
-                      },
                     ),
                   ),
+                  if (list.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, bottom: 4),
+                      child: SizedBox(
+                        height: 236,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: EfcSpacing.screenH),
+                          itemCount: list.length - 1,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 10),
+                          itemBuilder: (_, i) {
+                            final v = list[i + 1];
+                            return PosterTile(
+                              video: v,
+                              locked: v.isPremium,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => VideoPlayerScreen(video: v),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                ],
               ],
             ),
           ),

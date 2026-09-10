@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -46,19 +47,29 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(
           EfcSpacing.screenH,
-          EfcSpacing.lg,
+          20,
           EfcSpacing.screenH,
-          EfcSpacing.sm,
+          11,
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            UtilityLabel(title, letterSpacing: 2.0),
+            // Display face, not mono — mono everywhere read as dense and
+            // technical, and buried the hierarchy between title and body.
+            Text(title.toUpperCase(),
+                style: EfcText.display(size: 17, letterSpacing: 0.4)),
             if (action != null)
               GestureDetector(
                 onTap: onAction,
                 behavior: HitTestBehavior.opaque,
-                child: UtilityLabel(action!, letterSpacing: 2.0),
+                child: UtilityLabel(
+                  action!,
+                  size: 9.5,
+                  color: EfcColors.blood,
+                  letterSpacing: 1.2,
+                ),
               ),
           ],
         ),
@@ -209,25 +220,52 @@ class ChipTabs extends StatelessWidget {
 class ArtworkBox extends StatelessWidget {
   const ArtworkBox({
     super.key,
-    required this.height,
+    this.height,
     this.caption,
     this.imageUrl,
   });
 
-  final double height;
+  /// Null height means "fill the parent" — required when used inside a Stack
+  /// with StackFit.expand, which is how every Layout B hero works.
+  final double? height;
   final String? caption;
   final String? imageUrl;
 
   @override
-  Widget build(BuildContext context) => Container(
-        height: height,
-        width: double.infinity,
-        decoration: const BoxDecoration(gradient: EfcColors.thumbGradient),
-        alignment: Alignment.bottomLeft,
-        padding: const EdgeInsets.all(7),
-        child: caption == null
-            ? null
-            : Container(
+  Widget build(BuildContext context) {
+    final hasImage = imageUrl != null && imageUrl!.isNotEmpty;
+
+    Widget content = Container(
+      decoration: const BoxDecoration(gradient: EfcColors.thumbGradient),
+    );
+
+    if (hasImage) {
+      content = CachedNetworkImage(
+        imageUrl: imageUrl!,
+        fit: BoxFit.cover,
+        // Fade in rather than popping, so a scroll past unloaded art is calm.
+        fadeInDuration: const Duration(milliseconds: 180),
+        placeholder: (_, __) => Container(
+          decoration: const BoxDecoration(gradient: EfcColors.thumbGradient),
+        ),
+        errorWidget: (_, __, ___) => Container(
+          decoration: const BoxDecoration(gradient: EfcColors.thumbGradient),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          content,
+          if (caption != null)
+            Positioned(
+              left: 7,
+              bottom: 7,
+              child: Container(
                 color: Colors.black,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
@@ -238,7 +276,11 @@ class ArtworkBox extends StatelessWidget {
                   letterSpacing: 1.0,
                 ),
               ),
-      );
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Full-bleed hairline divider matching the prototype's 1px rules.

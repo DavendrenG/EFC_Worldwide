@@ -7,6 +7,7 @@ import '../state/app_state.dart';
 import '../theme/tokens.dart';
 import '../widgets/cards.dart';
 import '../widgets/common.dart';
+import '../widgets/layout_b.dart';
 import 'fighter_detail_screen.dart';
 import 'screen_scaffold.dart';
 
@@ -86,43 +87,17 @@ class _AthletesScreenState extends State<AthletesScreen> {
                     ),
                   )
                 else
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      EfcSpacing.screenH,
-                      EfcSpacing.md,
-                      EfcSpacing.screenH,
-                      0,
-                    ),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 0.80,
+                  // Rankings-style rows: a face and a record read faster than
+                  // a card, and this scales to a 150-strong roster.
+                  for (final f in list)
+                    AthleteRow(
+                      fighter: f,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => FighterDetailScreen(fighterId: f.id),
+                        ),
                       ),
-                      itemCount: list.length,
-                      itemBuilder: (_, i) {
-                        final f = list[i];
-                        return GridCard(
-                          title: f.fullName,
-                          subtitle: f.statusLabel,
-                          caption: f.division,
-                          trailing: f.isChampion
-                              ? const Pill('Champ')
-                              : null,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) =>
-                                  FighterDetailScreen(fighterId: f.id),
-                            ),
-                          ),
-                        );
-                      },
                     ),
-                  ),
                 const Padding(
                   padding: EdgeInsets.fromLTRB(16, 18, 16, 0),
                   child: UtilityLabel(

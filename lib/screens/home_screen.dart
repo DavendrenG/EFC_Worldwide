@@ -4,9 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../state/app_state.dart';
 import '../theme/tokens.dart';
-import '../widgets/cards.dart';
 import '../widgets/common.dart';
-import '../widgets/countdown.dart';
+import '../widgets/layout_b.dart';
 import 'article_screen.dart';
 import 'event_detail_screen.dart';
 import 'root_shell.dart';
@@ -29,6 +28,13 @@ class _HomeScreenState extends State<HomeScreen> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
+
+  static const _months = [
+    'JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'
+  ];
+
+  static String _shortDate(DateTime? d) =>
+      d == null ? '' : '${d.day} ${_months[d.month - 1]}';
 
   void _toast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -83,16 +89,16 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.only(bottom: 24),
               children: [
                 if (featured != null)
-                  EventPoster(
+                  EventHero(
                     event: featured,
-                    countdown: EventCountdown(target: featured.startsAt),
                     onTickets: featured.ticketUrl == null
                         ? () => _toast('Tickets for ${featured.name} '
                             'are not on sale yet.')
                         : () => _openTickets(featured.ticketUrl),
-                    onRemind: () => _toast(
-                      'You\u2019ll get a push when ${featured.name} '
-                      'fight week starts.',
+                    onOpen: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => EventDetailScreen(eventId: featured.id),
+                      ),
                     ),
                   ),
                 if (continueWatching.isNotEmpty) ...[
@@ -104,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ?.goToTab(3),
                   ),
                   SizedBox(
-                    height: 152,
+                    height: 232,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(
@@ -112,8 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       itemCount: continueWatching.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 10),
-                      itemBuilder: (_, i) => RailTile(
+                      itemBuilder: (_, i) => PosterTile(
                         video: continueWatching[i],
+                        locked: continueWatching[i].isPremium,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
                             builder: (_) =>
@@ -133,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ?.goToTab(1),
                   ),
                   for (final e in state.upcomingEvents.skip(1).take(2))
-                    EventRow(
+                    ScheduleRow(
                       event: e,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
@@ -149,9 +156,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       .findAncestorStateOfType<RootShellState>()
                       ?.goToTab(4),
                 ),
-                for (final a in latest)
-                  ArticleRow(
-                    article: a,
+                if (latest.isNotEmpty)
+                  LeadCard(
+                    title: latest.first.title,
+                    meta: _shortDate(latest.first.publishedAt),
+                    imageUrl: latest.first.heroImageUrl,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ArticleScreen(article: latest.first),
+                      ),
+                    ),
+                  ),
+                for (final a in latest.skip(1))
+                  ThumbRow(
+                    title: a.title,
+                    meta: _shortDate(a.publishedAt),
+                    imageUrl: a.heroImageUrl,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => ArticleScreen(article: a),
