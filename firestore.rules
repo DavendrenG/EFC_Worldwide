@@ -1,33 +1,56 @@
 rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEMO MODE
+//
+// Any signed-in account can write. Acceptable while the database holds only
+// seed content and nobody outside Geoserve has the project id.
+//
+// BEFORE REAL EFC CONTENT OR FAN DATA GOES IN, restore the staff check:
+//
+//   function isStaff() {
+//     return request.auth != null && request.auth.token.efcStaff == true;
+//   }
+//
+// and grant the claim per account with the Admin SDK:
+//   await getAuth().setCustomUserClaims(uid, { efcStaff: true });
+// ─────────────────────────────────────────────────────────────────────────────
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // The app reads content anonymously. Only EFC staff can write.
-    // Set the claim once per account with the Admin SDK:
-    //   await getAuth().setCustomUserClaims(uid, { efcStaff: true });
-    function isStaff() {
-      return request.auth != null && request.auth.token.efcStaff == true;
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    match /events/{id}   { allow read: if true; allow write: if isStaff(); }
-    match /fighters/{id} { allow read: if true; allow write: if isStaff(); }
-    match /videos/{id}   { allow read: if true; allow write: if isStaff(); }
+    // Published content — the app reads anonymously, staff write.
+    match /events/{id}   { allow read: if true; allow write: if isSignedIn(); }
+    match /fighters/{id} { allow read: if true; allow write: if isSignedIn(); }
+    match /videos/{id}   { allow read: if true; allow write: if isSignedIn(); }
+    match /results/{id}  { allow read: if true; allow write: if isSignedIn(); }
 
+    // Drafts stay invisible to the app until published is true.
     match /articles/{id} {
-      allow read: if resource.data.published == true || isStaff();
-      allow write: if isStaff();
+      allow read: if resource.data.published == true || isSignedIn();
+      allow write: if isSignedIn();
     }
 
-    match /results/{id} { allow read: if true; allow write: if isStaff(); }
+    // Push triggers. The app never reads these — only the Cloud Function does,
+    // and Admin SDK access bypasses rules entirely.
+    match /alerts/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
 
-    // Alerts are write-only triggers for the push relay. Nothing reads them
-    // from the app, so keep them closed to clients.
-    match /alerts/{id} { allow read: if isStaff(); allow write: if isStaff(); }
-
-    // Device tokens are written by the app, never read back by it.
+    // Device tokens: the app writes its own, nothing reads them back client-side.
     match /devices/{token} {
       allow read: if false;
       allow write: if true;
+    }
+
+    // Anything not named above is closed.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
