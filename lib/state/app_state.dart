@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import '../data/efc_repository.dart';
 import '../models/models.dart';
+import '../models/roles.dart';
+import '../models/wellness.dart';
 import '../services/favorites_store.dart';
 import '../services/push/push_service.dart';
 import 'package:collection/collection.dart';
@@ -11,6 +13,26 @@ import 'package:collection/collection.dart';
 enum LoadStatus { idle, loading, ready, failed }
 
 class AppState extends ChangeNotifier {
+
+  /// Who the signed-in user is and what they may do. Defaults to fan, so a
+  /// missing or failed role lookup denies rather than grants.
+  Permissions _permissions = Permissions.fan;
+  Permissions get permissions => _permissions;
+
+  /// Null while loading. Only populated for roles that may see costs.
+  LiabilitySummary? _liability;
+  LiabilitySummary? get liability => _liability;
+
+  /// Called after sign-in, once the ID token's claims are available.
+  void applyPermissions(Permissions p) {
+    _permissions = p;
+    notifyListeners();
+  }
+
+  void applyLiability(LiabilitySummary? summary) {
+    _liability = summary;
+    notifyListeners();
+  }
   AppState({
     required EfcRepository repository,
     required PushService push,

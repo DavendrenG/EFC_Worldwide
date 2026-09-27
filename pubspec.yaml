@@ -44,6 +44,8 @@ dependencies:
   huawei_push: ^6.12.0+300
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
@@ -51,4 +53,54 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/icon/
+    - assets/splash/
     - assets/images/
+
+# ── App icon ───────────────────────────────────────────────────────────────
+# Regenerate after dropping in EFC's real logo:
+#   python3 tools/make_icons.py --logo assets/brand/efc-logo.png
+#   flutter pub run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/icon/icon.png"
+
+  android: "ic_launcher"
+  # Adaptive icon: launchers mask this to a circle, squircle or rounded
+  # square, so the foreground carries deliberate padding.
+  adaptive_icon_background: "#08090B"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+  # Android 13+ themed icon, recoloured to the user's wallpaper.
+  adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"
+  min_sdk_android: 23
+
+  ios: true
+  # The App Store rejects icons containing an alpha channel.
+  remove_alpha_ios: true
+
+# ── Splash ─────────────────────────────────────────────────────────────────
+# The native splash covers the gap before Flutter's first frame; the animated
+# SplashScreen takes over from there. Both use #08090B so there is no flash
+# at the handover.
+flutter_native_splash:
+  color: "#08090B"
+  image: assets/splash/splash.png
+  branding: assets/splash/branding.png
+  branding_mode: bottom
+
+  color_dark: "#08090B"
+  image_dark: assets/splash/splash.png
+  branding_dark: assets/splash/branding.png
+
+  android_12:
+    # Android 12+ draws its own splash and masks the icon to a circle —
+    # only the centre ~60% shows, which is why the source is padded.
+    color: "#08090B"
+    image: assets/splash/splash.png
+    icon_background_color: "#08090B"
+    color_dark: "#08090B"
+    image_dark: assets/splash/splash.png
+    icon_background_color_dark: "#08090B"
+
+  android: true
+  ios: true
+  web: false

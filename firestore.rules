@@ -1,54 +1,133 @@
 rules_version = '2';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DEMO MODE
+// ═════════════════════════════════════════════════════════════════════════════
+// EFC — role-based access control
 //
-// Any signed-in account can write. Acceptable while the database holds only
-// seed content and nobody outside Geoserve has the project id.
+// Roles live in the Firebase custom claim `efcRole`, one of:
+//   super_admin · admin · medical · fighter · fan
 //
-// BEFORE REAL EFC CONTENT OR FAN DATA GOES IN, restore the staff check:
+// Grant with the Admin SDK:
+//   await getAuth().setCustomUserClaims(uid, {
+//     efcRole: 'medical',
+//     fighterId: null,        // set for fighter accounts
+//   });
 //
-//   function isStaff() {
-//     return request.auth != null && request.auth.token.efcStaff == true;
-//   }
+// Rules read the CLAIM, never a Firestore document — otherwise a user could
+// escalate by writing to a profile document they own.
 //
-// and grant the claim per account with the Admin SDK:
-//   await getAuth().setCustomUserClaims(uid, { efcStaff: true });
-// ─────────────────────────────────────────────────────────────────────────────
+// ── HEALTH DATA ─────────────────────────────────────────────────────────────
+// `wellness_injuries` holds special personal information under POPIA. The fan
+// app never reads it under any role. Clinical detail is further restricted to
+// medical staff and the athlete themselves; admins see financial fields only,
+// which is all the liability dashboard needs.
+//
+// Firestore cannot filter fields on read, so clinical data lives in a
+// SUBCOLLECTION with its own rule. Financial data stays on the parent.
+// That split is the entire privacy design — do not flatten it back.
+// ═════════════════════════════════════════════════════════════════════════════
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
+    function signedIn()  { return request.auth != null; }
+    function role()      { return signedIn() ? request.auth.token.efcRole : 'anonymous'; }
+    function isSuper()   { return role() == 'super_admin'; }
+    function isAdmin()   { return isSuper() || role() == 'admin'; }
+    function isMedical() { return isSuper() || role() == 'medical'; }
+
+    function ownFighterId() {
+      return signedIn() ? request.auth.token.fighterId : null;
+    }
+    function isSelf(fighterId) { return ownFighterId() == fighterId; }
+
+    function parentFighterId(id) {
+      return get(/databases/$(database)/documents/wellness_injuries/$(id))
+               .data.fighter_id;
     }
 
-    // Published content — the app reads anonymously, staff write.
-    match /events/{id}   { allow read: if true; allow write: if isSignedIn(); }
-    match /fighters/{id} { allow read: if true; allow write: if isSignedIn(); }
-    match /videos/{id}   { allow read: if true; allow write: if isSignedIn(); }
-    match /results/{id}  { allow read: if true; allow write: if isSignedIn(); }
+    // ── published content ─────────────────────────────────────────────────
+    match /events/{id}  { allow read: if true; allow write: if isAdmin(); }
+    match /videos/{id}  { allow read: if true; allow write: if isAdmin(); }
+    match /results/{id} { allow read: if true; allow write: if isAdmin(); }
 
-    // Drafts stay invisible to the app until published is true.
     match /articles/{id} {
-      allow read: if resource.data.published == true || isSignedIn();
-      allow write: if isSignedIn();
+      allow read: if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
     }
 
-    // Push triggers. The app never reads these — only the Cloud Function does,
-    // and Admin SDK access bypasses rules entirely.
+    // ── roster ────────────────────────────────────────────────────────────
+    // Athletes update their own gym and camp details only. Records, rankings
+    // and champion status stay with admins — otherwise a fighter could
+    // promote themselves to champion.
+    match /fighters/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (isSelf(id)
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['team','gym','gym_city','coach',
+                           'social_instagram','bio','updated_at']));
+    }
+
+    // ── wellness: financial layer ─────────────────────────────────────────
+    match /wellness_injuries/{id} {
+      allow read: if isAdmin() || isMedical() || isSelf(resource.data.fighter_id);
+      allow create, update: if isMedical();
+      // An injury history is a medical and financial audit trail.
+      allow delete: if isSuper();
+
+      // ── clinical layer — NOT readable by admins ─────────────────────────
+      match /clinical/{doc} {
+        allow read: if isMedical() || isSelf(parentFighterId(id));
+        allow write: if isMedical();
+      }
+
+      // Cost lines. Medical records them, admins read them for the dashboard.
+      match /costs/{lineId} {
+        allow read: if isAdmin() || isMedical() || isSelf(parentFighterId(id));
+        allow create, update: if isMedical() || isAdmin();
+        allow delete: if isSuper();
+      }
+    }
+
+    // Pre-aggregated totals written by a Cloud Function, so no client reads
+    // every injury just to draw a chart.
+    match /wellness_rollups/{id} {
+      allow read: if isAdmin() || isMedical();
+      allow write: if false;   // Admin SDK bypasses rules
+    }
+
+    // ── roles ─────────────────────────────────────────────────────────────
+    // Display mirror of the claims. The claim is what rules trust; writes go
+    // through a Cloud Function that sets both together.
+    match /user_roles/{uid} {
+      allow read: if isAdmin() || request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ── push triggers ─────────────────────────────────────────────────────
     match /alerts/{id} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if isSuper();
     }
 
-    // Device tokens: the app writes its own, nothing reads them back client-side.
+    // ── runtime config / killswitch ───────────────────────────────────────
+    // Everyone reads it, including unauthenticated installs — the switch is
+    // useless if a blocked client cannot fetch the instruction to stop.
+    // Only super admins change it.
+    match /app_config/{doc} {
+      allow read: if true;
+      allow write: if isSuper();
+    }
+
+    // ── device tokens ─────────────────────────────────────────────────────
+    // Anonymous installs must still be able to register for push.
     match /devices/{token} {
       allow read: if false;
       allow write: if true;
     }
 
-    // Anything not named above is closed.
     match /{document=**} {
       allow read, write: if false;
     }
